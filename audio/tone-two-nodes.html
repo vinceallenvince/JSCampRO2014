@@ -1,0 +1,197 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="css/Burner.min.css" type="text/css" charset="utf-8" />
+    <link rel="stylesheet" href="css/Flora.min.css" type="text/css" charset="utf-8" />
+    <script src="scripts/Burner.js" type="text/javascript" charset="utf-8"></script>
+    <script src="scripts/Flora.js" type="text/javascript" charset="utf-8"></script>
+    <script src="palettes/ochresand.js" type="text/javascript" charset="utf-8"></script>
+  </head>
+  <body>
+    <script src='http://localhost:1337/socket.io/socket.io.js'></script>
+    <script type="text/javascript">
+
+      var socket = io.connect('http://localhost:1337');
+      var lastVal;
+
+      var ampA = 0, ampB = 0;
+
+      var world = new Burner.World(document.body, {
+        gravity: new Burner.Vector(0, 0),
+        c: 0,
+        color: [255, 242, 211]
+      });
+
+      var rand = Flora.Utils.getRandomNumber;
+      var map = Flora.Utils.map;
+
+      var paletteA = exports.ochreSand;
+
+      var center = new Burner.Vector(world.width / 2, world.height / 2);
+      var minRadius = 0;
+      var maxRadius = world.width / 4;
+      var minScale = 5;
+      var maxScale = 30;
+      var minBorder = 1;
+      var maxBorder = 4;
+      var minAccel = 1;
+      var maxAccel = 3;
+
+      Burner.System.init(function() {
+
+        var attractorLeft = this.add('Attractor', {
+          location: new Burner.Vector((world.width / 2) - 200, world.height / 2),
+          width: 200,
+          height: 200,
+          isStatic: true,
+          color: [157,101,43],
+          borderColor: [235,223,194],
+          borderStyle: 'double',
+          boxShadowColor: 'transparent',
+          opacity: 1,
+          checkWorldEdges: false,
+          zIndex: 2,
+          beforeStep: function() {
+            this.G = map(ampA, 5, 300, 0, 100);
+          }
+        });
+
+        this.add('Agent', {
+          width: 20,
+          height: 400,
+          parent: attractorLeft,
+          offsetDistance: 0,
+          isStatic: true,
+          angle: 0,
+          color: [188,148,95],
+          borderColor: [255,255,255],
+          borderWidth: 8,
+          borderStyle: 'solid',
+          boxShadowColor: [227,171,67],
+          zIndex: 1,
+          beforeStep: function() {
+            this.angle = ampA ? this.angle + (ampA * 0.22) : this.angle;
+          }
+        });
+
+        this.add('Agent', {
+          width: 100,
+          height: 300,
+          parent: attractorLeft,
+          offsetDistance: 0,
+          isStatic: true,
+          angle: 0,
+          color: [188,148,95],
+          borderColor: [255,255,255],
+          borderWidth: 8,
+          borderStyle: 'solid',
+          boxShadowColor: [227,171,67],
+          zIndex: 1,
+          beforeStep: function() {
+            this.angle = ampA ? this.angle + (ampA * -0.35) : this.angle;
+          }
+        });
+
+        //
+
+        var attractorRight = this.add('Attractor', {
+          location: new Burner.Vector((world.width / 2) + 200, world.height / 2),
+          width: 200,
+          height: 200,
+          isStatic: true,
+          color: [157,101,43],
+          borderColor: [235,223,194],
+          borderStyle: 'double',
+          boxShadowColor: 'transparent',
+          opacity: 1,
+          checkWorldEdges: false,
+          zIndex: 2,
+          beforeStep: function() {
+            this.G = map(ampB, 5, 300, 0, 100);
+          }
+        });
+
+        this.add('Agent', {
+          width: 20,
+          height: 400,
+          parent: attractorRight,
+          offsetDistance: 0,
+          isStatic: true,
+          angle: 0,
+          color: [188,148,95],
+          borderColor: [255,255,255],
+          borderWidth: 8,
+          borderStyle: 'solid',
+          boxShadowColor: [227,171,67],
+          zIndex: 1,
+          beforeStep: function() {
+            this.angle = ampB ? this.angle + (ampB * -0.2) : this.angle;
+          }
+        });
+
+        this.add('Agent', {
+          width: 100,
+          height: 300,
+          parent: attractorRight,
+          offsetDistance: 0,
+          isStatic: true,
+          angle: 0,
+          color: [188,148,95],
+          borderColor: [255,255,255],
+          borderWidth: 8,
+          borderStyle: 'solid',
+          boxShadowColor: [227,171,67],
+          zIndex: 1,
+          beforeStep: function() {
+            this.angle = ampB ? this.angle + (ampB * 0.25) : this.angle;
+          }
+        });
+
+        for (var i = 0; i < 100; i++) {
+
+          var loc = new Burner.Vector(1, 1);
+          loc.normalize();
+          loc.rotate(rand(0, 360, true));
+          loc.mult(rand(minRadius, maxRadius));
+          loc.add(center);
+
+          var accel = new Burner.Vector(1, 1);
+          accel.normalize();
+          accel.rotate(rand(0, 360, true));
+          accel.mult(rand(minAccel, maxAccel));
+
+          var scale = rand(minScale, maxScale);
+          this.add('Agent', {
+            location: loc,
+            acceleration: accel,
+            width: scale,
+            height: scale,
+            mass: 10,
+            color: paletteA.getColor(),
+            borderRadius: i % 2 ? 100 : 0,
+            borderColor: paletteA.getColor(),
+            borderWidth: map(scale, minScale, maxScale, minBorder, maxBorder),
+            borderStyle: 'solid',
+            wrapWorldEdges: false,
+            zIndex: 100
+          });
+        }
+
+      }, world);
+
+      socket.on('connected', function() {
+        console.log('connected');
+      });
+
+      socket.on('data', function(data) {
+        if (lastVal == 1) {
+          ampA = Flora.Utils.map(data, 0, 3000, 1, 300);
+        } else if (lastVal == 2) {
+          ampB = Flora.Utils.map(data, 0, 3000, 1, 300);
+        }
+        lastVal = data;
+      });
+
+    </script>
+
+  </body>
+</html>

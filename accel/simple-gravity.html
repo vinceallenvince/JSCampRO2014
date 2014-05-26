@@ -1,0 +1,78 @@
+<html>
+  <title>FloraJS | BLE Sensor</title>
+  <head>
+    <link rel="stylesheet" href="css/burner.min.css" type="text/css" charset="utf-8" />
+    <link rel="stylesheet" href="css/flora.min.css" type="text/css" charset="utf-8" />
+    <script src="scripts/burner.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="scripts/flora.min.js" type="text/javascript" charset="utf-8"></script>
+  </head>
+  <body>
+    <script type='text/javascript' src='http://localhost:1337/socket.io/socket.io.js'></script>
+    <script type='text/javascript'>
+
+      var paletteA = new Flora.ColorPalette();
+      paletteA.addColor({
+        min: 12,
+        max: 24,
+        startColor: [207, 194, 155],
+        endColor: [157, 136, 71]
+      });
+
+      var rand = Flora.Utils.getRandomNumber;
+      var map = Flora.Utils.map;
+
+      // start the system; pass initial instructions
+      Burner.System.init();
+
+      var world = Burner.System.firstWorld();
+      world.gravity.x = 0;
+      world.gravity.y = 0;
+      world.c = .25;
+
+      var center = new Burner.Vector(world.width / 2, world.height / 2);
+      var minRadius = 50;
+      var maxRadius = 100;
+      var minScale = 5;
+      var maxScale = 40;
+      var minMass = 1;
+      var maxMass = 2;
+      var maxAgents = 70;
+
+      for (var i = 0; i < maxAgents; i++) {
+        var loc = new Burner.Vector(1, 1);
+        loc.normalize();
+        loc.rotate(rand(0, 360, true));
+        loc.mult(rand(minRadius, maxRadius));
+        loc.add(center);
+        var scale = rand(minScale, maxScale);
+        Burner.System.add('Agent', {
+          location: loc,
+          mass: map(scale, minScale, maxScale, minMass, maxMass),
+          width: scale,
+          height: scale,
+          color: paletteA.getColor(),
+          opacity: map(scale, minScale, maxScale, .9, .1)
+        });
+      }
+
+      //
+
+      var socket = io.connect('http://localhost:1337');
+
+      socket.on('connected', function() {
+        console.log('connected!');
+      });
+
+      socket.on('dataReceived', function(data) {
+        if (data.val) {
+          if (data.val.gravity.x) {
+            world.gravity.x = Flora.Utils.map(data.val.gravity.x, -1, 1, -1, 1);
+          }
+          if (data.val.gravity.y) {
+            world.gravity.y = Flora.Utils.map(data.val.gravity.y, -1, 1, 1, -1);
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

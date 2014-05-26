@@ -1,0 +1,128 @@
+<html>
+  <title>FloraJS | BLE Sensor</title>
+  <head>
+    <link rel="stylesheet" href="css/burner.min.css" type="text/css" charset="utf-8" />
+    <link rel="stylesheet" href="css/flora.min.css" type="text/css" charset="utf-8" />
+    <script src="scripts/burner.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="scripts/flora.min.js" type="text/javascript" charset="utf-8"></script>
+  </head>
+  <body>
+    <script type='text/javascript' src='http://localhost:1337/socket.io/socket.io.js'></script>
+    <script type='text/javascript'>
+
+      var paletteA = new Flora.ColorPalette();
+      paletteA.addColor({
+        min: 12,
+        max: 24,
+        startColor: [207, 194, 155],
+        endColor: [157, 136, 71]
+      });
+
+      var paletteB = new Flora.ColorPalette();
+      paletteB.addColor({
+        min: 12,
+        max: 24,
+        startColor: [255, 255, 255],
+        endColor: [200, 200, 200]
+      });
+
+      var rand = Flora.Utils.getRandomNumber;
+      var map = Flora.Utils.map;
+
+      // start the system; pass initial instructions
+      Burner.System.init();
+
+      var world = Burner.System.firstWorld();
+      world.gravity.x = 0;
+      world.gravity.y = 0;
+      world.c = .25;
+
+      var center = new Burner.Vector(world.width / 2, world.height / 2);
+      var minRadius = 50;
+      var maxRadius = 100;
+      var minScale = 5;
+      var maxScale = 300;
+      var superScale = 400;
+      var minMass = 1;
+      var maxMass = 10;
+      var superMass = 100
+      var maxAgents = 120;
+      var minBorder = 1;
+      var maxBorder = 4;
+      var superBorder = 4;
+
+      var target = Burner.System.add('Agent', {
+        location: new Burner.Vector(world.width / 2, world.height / 2),
+        mass: maxMass,
+        width: maxScale / 6,
+        height: maxScale / 6,
+        color: [234, 134, 37],
+        opacity: 1,
+        borderRadius: 100,
+        borderColor: [255, 255, 255],
+        borderWidth: 20,
+        borderStyle: 'double',
+        zIndex: 1000,
+        wrapWorldEdges: true,
+        beforeStep: function() {
+          var mag = this.velocity.mag();
+          this.opacity = map(mag, 0, this.maxSpeed, 0.9, 0.5);
+          this.scale = map(mag, 0, this.maxSpeed, 1, 0.15);
+        }
+      });
+
+      for (var i = 0; i < maxAgents; i++) {
+
+        var loc = new Burner.Vector(1, 1);
+        loc.normalize();
+        loc.rotate(rand(0, 360, true));
+        loc.mult(rand(minRadius, maxRadius));
+        loc.add(center);
+        var scale = map(i, 0, maxAgents, minScale, maxScale);
+        Burner.System.add('Agent', {
+          location: loc,
+          mass: scale * 1.25,
+          width: scale,
+          height: scale,
+          borderRadius: 100,
+          borderColor: paletteB.getColor(),
+          borderWidth: map(scale, minScale, maxScale, minBorder, maxBorder),
+          borderStyle: 'solid',
+          color: paletteA.getColor(),
+          opacity: map(scale, minScale, maxScale, .9, .1),
+          flocking: false,
+          alignStrength: 0.1,
+          seekTarget: target,
+          zIndex: maxAgents - i,
+          wrapWorldEdges: true,
+        });
+
+        if (!i) {
+          Burner.System.add('Connector', {
+            parentA: target,
+            parentB: Burner.System._records.list[Burner.System._records.list.length - 1]
+          })
+        }
+      }
+
+      //
+
+      var socket = io.connect('http://localhost:1337');
+
+      socket.on('connected', function() {
+        console.log('connected!');
+      });
+
+      socket.on('dataReceived', function(data) {
+        if (data.val) {
+          if (data.val.gravity.x) {
+            world.gravity.x = Flora.Utils.map(data.val.gravity.x, -1, 1, -1, 1);
+          }
+          if (data.val.gravity.y) {
+            world.gravity.y = Flora.Utils.map(data.val.gravity.y, -1, 1, 1, -1);
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

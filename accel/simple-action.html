@@ -1,0 +1,150 @@
+<html>
+  <title>FloraJS | BLE Sensor</title>
+  <head>
+    <link rel="stylesheet" href="css/burner.min.css" type="text/css" charset="utf-8" />
+    <link rel="stylesheet" href="css/flora.min.css" type="text/css" charset="utf-8" />
+    <script src="scripts/burner.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="scripts/flora.min.js" type="text/javascript" charset="utf-8"></script>
+  </head>
+  <body>
+    <script type='text/javascript' src='http://localhost:1337/socket.io/socket.io.js'></script>
+    <script type='text/javascript'>
+
+      var myAgent;
+      var rand = Flora.Utils.getRandomNumber;
+      var map = Flora.Utils.map;
+
+      function createMotor(id, c) {
+        var color = c || [255, 255, 255];
+        var motor = document.createElement('div');
+        motor.id = 'motor' + id;
+        motor.className = 'motor';
+        motor.style.cssText = 'position: absolute; top: 11px; left: 6px; width: 14px; height: 2px; background: #666; opacity: 1;';
+        motor.style.backgroundColor = 'rgb(' + color[0] + ',' + color[1] + ',' + color[2] + ')';
+        return motor;
+      }
+
+      // start the system; pass initial instructions
+      Burner.System.init();
+
+      var world = Burner.System.firstWorld();
+      world.gravity.x = 0;
+      world.gravity.y = 0;
+      world.c = 0;
+
+      var center = new Burner.Vector(world.width / 2, world.height / 2);
+
+      myAgent = Burner.System.add('Agent', {
+        angle: rand(0, 360),
+        motorSpeed: 2,
+        minSpeed: 1,
+        maxSpeed: 4,
+        width: 30,
+        height: 30,
+        location: new Burner.Vector(world.width / 2, world.height / 2),
+        color: [255, 255, 255],
+        borderColor: [255, 100, 0],
+        borderWidth: 2,
+        borderStyle: 'solid',
+        borderRadius: 0,
+        controlCamera: false,
+        wrapWorldEdges: true,
+        motorRotation: 0,
+        zIndex: 100,
+        beforeStep: function() {
+          var motor = document.getElementById('motor' + this.id),
+          a = this.motorRotation;
+
+          if (motor) {
+            motor.style.webkitTransform = 'rotate(' + a + 'deg)';
+            this.motorRotation += Flora.Utils.map(this.velocity.mag(),
+                this.minSpeed, this.maxSpeed, 10, 20);
+          }
+        }
+      });
+
+      myAgent.el.appendChild(createMotor(myAgent.id, [100, 100, 100]));
+
+      Burner.System.add('Agent', {
+        width: 1,
+        height: 100,
+        parent: myAgent,
+        pointToDirection: false,
+        isStatic: true,
+        wrapWorldEdges: true,
+        offsetDistance: 0,
+        zIndex: 1,
+        beforeStep: function() {
+          this.angle = this.parent.angle;
+        }
+      });
+
+      for (var i = 0; i < 20; i++) {
+
+        Burner.System.add('Agent', {
+          seekTarget: myAgent,
+          flocking: true,
+          mass: i * 10,
+          width: 2 + i,
+          height: 2 + i,
+          color: [200, 255, 255],
+          borderRadius: 100,
+          separateStrength: 10
+        });
+
+        Burner.System.add('Agent', {
+          width: 1,
+          height: 30 + (i * 2),
+          parent: Burner.System._records.list[Burner.System._records.list.length - 1],
+          pointToDirection: false,
+          isStatic: true,
+          wrapWorldEdges: true,
+          offsetDistance: 0,
+          beforeStep: function() {
+            this.angle = this.parent.angle;
+          }
+        });
+      }
+
+      //
+
+      var yaw = 0, yawOffset = 0;
+
+      var socket = io.connect('http://localhost:1337');
+
+      socket.on('connected', function() {
+        console.log('connected!');
+      });
+
+      socket.on('dataReceived', function(data) {
+
+        var accelMult = 0.5;
+
+        if (data.calibrate) {
+          yawOffset = yaw - 2.349;
+        }
+
+        if (data.action) {
+          Burner.System.add('ParticleSystem', {
+            lifespan: 10,
+            location: new Burner.Vector(myAgent.location.x, myAgent.location.y)
+          });
+        }
+
+        if (data.val) {
+          if (data.val.attitude.yaw) {
+            yaw = data.val.attitude.yaw;
+            var accel = new Burner.Vector(1, 1);
+            accel.normalize();
+            accel.rotate(-(yaw - yawOffset));
+            accel.mult(accelMult);
+            myAgent.acceleration.x = accel.x;
+            myAgent.acceleration.y = accel.y;
+          }
+        }
+
+
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,200 @@
+<html>
+  <title>FloraJS | BLE Sensor</title>
+  <head>
+    <link rel="stylesheet" href="css/burner.min.css" type="text/css" charset="utf-8" />
+    <link rel="stylesheet" href="css/flora.min.css" type="text/css" charset="utf-8" />
+    <script src="scripts/burner.js" type="text/javascript" charset="utf-8"></script>
+    <script src="scripts/flora.js" type="text/javascript" charset="utf-8"></script>
+    <script src="palettes/pinky.js" type="text/javascript" charset="utf-8"></script>
+  </head>
+  <body>
+    <script type='text/javascript' src='http://localhost:1337/socket.io/socket.io.js'></script>
+    <script type='text/javascript'>
+
+      var palette = exports.pinky;
+
+      var rand = Flora.Utils.getRandomNumber;
+      var map = Flora.Utils.map;
+
+      var world = new Burner.World(document.body, {
+        gravity: new Burner.Vector(0, 0),
+        c: 0,
+        color: [175, 228, 183]
+      });
+
+      var center = new Burner.Vector(world.width / 2, world.height / 2);
+      var minRadius = 100;
+      var maxRadius = 300;
+      var minScale = 10;
+      var maxScale = 30;
+      var minMass = 100;
+      var maxMass = 200;
+      var maxAgents = 120;
+      var minBorder = 1;
+      var maxBorder = 4;
+
+      // start the system; pass initial instructions
+      Burner.System.init(function() {
+
+        var attrBig = Burner.System.add('Attractor', {
+          location: new Burner.Vector(world.width / 2, world.height / 2),
+          width: 400,
+          height: 400,
+          isStatic: true,
+          color: [213,134,129],
+          borderColor: [182,124,65],
+          borderStyle: 'dashed',
+          boxShadowColor: [211,152,158],
+          opacity: 1,
+          checkWorldEdges: false,
+          zIndex: 0,
+          G: 1,
+          beforeStep: function() {
+            this.angle = yaw * 0.15;
+            var g = parseInt(Flora.Utils.map(yaw, -90, 90, 100, -50));
+            this.G = g ? g : 1;
+          }
+        });
+
+
+        for (var i = 0; i < 100; i++) {
+
+          var loc = new Burner.Vector(1, 1);
+          loc.normalize();
+          loc.rotate(rand(0, 360, true));
+          loc.mult(rand(minRadius, maxRadius));
+          loc.add(center);
+          var scale = rand(minScale, maxScale);
+
+          Burner.System.add('Agent', {
+            location: loc,
+            mass: map(scale, minScale, maxScale, minMass, maxMass),
+            width: scale,
+            height: scale,
+            borderRadius: i % 2 ? 100 : 0,
+            borderColor: [255, 255, 255],
+            borderWidth: map(scale, minScale, maxScale, minBorder, maxBorder),
+            borderStyle: 'solid',
+            color: palette.getColor(),
+            opacity: 1,
+            zIndex: i,
+            wrapWorldEdges: true,
+            beforeStep: function() {
+              var mag = this.velocity.mag();
+              this.opacity = Flora.Utils.map(mag, 0, this.maxSpeed, 1, 0.75);
+              this.scale = Flora.Utils.map(mag, 3, this.maxSpeed, 0, 1.5);
+            }
+          });
+        }
+
+
+        var attrSm1 = Burner.System.add('Attractor', {
+          location: new Burner.Vector(world.width / 4, world.height / 4),
+          width: 150,
+          height: 150,
+          isStatic: true,
+          color: [205,126,121],
+          borderColor: [218,159,165],
+          borderStyle: 'double',
+          boxShadowColor: [255,255,255],
+          opacity: 1,
+          checkWorldEdges: false,
+          zIndex: 20,
+          G: 0,
+          beforeStep: function() {
+            this.angle = yaw * 0.35;
+            var g = parseInt(Flora.Utils.map(yaw, -90, 90, 100, 0));
+            this.G = g ? g : 1;
+          }
+        });
+
+        var Sm1Child = Burner.System.add('Agent', {
+          width: 3,
+          height: 400,
+          zIndex: 0,
+          color: [255,221,212],
+          parent: attrSm1,
+          offsetDistance: 1,
+          isStatic: true,
+          zIndex: 40,
+          G: 0,
+          beforeStep: function() {
+            this.angle = this.parent.angle;
+            var g = parseInt(Flora.Utils.map(yaw, -90, 90, 100, 0));
+            this.G = g ? g : 1;
+          }
+        });
+
+        var attrSm2 = Burner.System.add('Attractor', {
+          location: new Burner.Vector(world.width / 1.25, world.height / 1.25),
+          width: 250,
+          height: 250,
+          isStatic: true,
+          color: [189,131,72],
+          borderColor: [255,255,255],
+          borderStyle: 'inset',
+          boxShadowColor: [218,159,165],
+          opacity: 1,
+          checkWorldEdges: false,
+          zIndex: 2,
+          G: 0,
+          zIndex: 60,
+          beforeStep: function() {
+            this.angle = yaw * 0.5;
+            var g = parseInt(Flora.Utils.map(yaw, -90, 90, 100, 0));
+            this.G = g ? g : 1;
+          }
+        });
+
+        var attrSm3 = Burner.System.add('Attractor', {
+          location: new Burner.Vector(world.width / 2.75, world.height / 1.65),
+          width: 300,
+          height: 300,
+          isStatic: true,
+          color: [235,203,194],
+          borderColor: [213,134,129],
+          borderStyle: 'inset',
+          boxShadowColor: [196,138,79],
+          opacity: 1,
+          checkWorldEdges: false,
+          zIndex: 3,
+          G: 0,
+          zIndex: 80,
+          beforeStep: function() {
+            this.angle = yaw;
+            var g = parseInt(Flora.Utils.map(yaw, -90, 90, 100, 0));
+            this.G = g ? g : 1;
+          }
+        });
+
+      }, world);
+
+      //
+
+      var yaw = 0, yawOffset = 0;
+
+      var socket = io.connect('http://localhost:1337');
+
+      socket.on('connected', function() {
+        console.log('connected!');
+      });
+
+      socket.on('dataReceived', function(data) {
+
+        if (data.calibrate) {
+          yawOffset = yaw;
+        }
+
+        if (data.val) {
+          if (data.val.attitude.yaw) {
+            yaw = Flora.Utils.radiansToDegrees(data.val.attitude.yaw);
+            yaw = (yaw - yawOffset);
+          }
+        }
+      });
+
+
+
+    </script>
+  </body>
+</html>

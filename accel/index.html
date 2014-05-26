@@ -1,0 +1,139 @@
+<html>
+  <title>FloraJS | BLE Sensor</title>
+  <head>
+    <style>
+      .container {
+        position: relative;
+        width: 640px;
+        height: 480px;
+        margin: 0 auto;
+        background-color: #eee;
+      }
+      #box {
+        position: absolute;
+        top: 0; left: 0;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div class='container'>
+      <div id='box'></div>
+    </div>
+
+
+    <table id='vals'>
+      <tr>
+        <td id='keyRoll'>Roll: </td><td id='valRoll'></td>
+      </tr>
+      <tr>
+        <td id='keyPitch'>Pitch: </td><td id='valPitch'></td>
+      </tr>
+      <tr>
+        <td id='keyYaw'>Yaw: </td><td id='valYaw'></td>
+      </tr>
+      <tr>
+        <td id='keyGravX'>Gravity X: </td><td id='valGravX'></td>
+      </tr>
+      <tr>
+        <td id='keyGravY'>Gravity Y: </td><td id='valGravY'></td>
+      </tr>
+      <tr>
+        <td id='keyGravZ'>Gravity Z: </td><td id='valGravZ'></td>
+      </tr>
+      <tr>
+        <td id='keyAccelX'>Accel X: </td><td id='valAccelX'></td>
+      </tr>
+      <tr>
+        <td id='keyAccelY'>Accel Y: </td><td id='valAccelY'></td>
+      </tr>
+      <tr>
+        <td id='keyAccelZ'>Accel Z: </td><td id='valAccelZ'></td>
+      </tr>
+    </table>
+
+    <p><a href='simple-action.html'>Simple Action</a></p>
+    <p><a href='simple-gravity.html'>Simple Gravity</a></p>
+    <p><a href='simple-flocking.html'>Simple Flocking</a></p>
+    <p><a href='rotate-attract.html'>Rotate Attract</a></p>
+    <p><a href='rotate-gears.html'>Rotate Gears</a></p>
+
+    <script type='text/javascript' src='scripts/supersimplesim.js'></script>
+    <script type='text/javascript' src='http://localhost:1337/socket.io/socket.io.js'></script>
+    <script type='text/javascript'>
+
+      var sssim = SuperSimpleSim;
+      var sys = new sssim.System();
+      sssim.System.records.push(new sssim.Box({
+        el: document.getElementById('box'),
+        width: 20,
+        height: 20
+      }));
+      sssim.System.loop();
+
+      //
+
+      var roll, pitch, yaw, yawOffset = 0;
+
+      var socket = io.connect('http://localhost:1337');
+
+      socket.on('connected', function() {
+        console.log('connected!');
+      });
+
+      socket.on('dataReceived', function(data) {
+
+        if (data.action) {
+          yawOffset = yaw;
+        }
+
+        if (data.val) {
+
+          if (data.val.attitude.roll) {
+            document.getElementById('valRoll').innerText = sssim.Utils.radiansToDegrees(data.val.attitude.roll);
+            roll = sssim.Utils.radiansToDegrees(data.val.attitude.roll);
+          }
+          if (data.val.attitude.pitch) {
+            document.getElementById('valPitch').innerText = sssim.Utils.radiansToDegrees(data.val.attitude.pitch);
+            pitch = sssim.Utils.radiansToDegrees(data.val.attitude.pitch);
+          }
+          if (data.val.attitude.yaw) {
+            document.getElementById('valYaw').innerText = sssim.Utils.radiansToDegrees(data.val.attitude.yaw);
+            yaw = sssim.Utils.radiansToDegrees(data.val.attitude.yaw);
+            sssim.System.records[0].angle = -(yaw - yawOffset);
+          }
+
+          if (data.val.gravity.x) {
+            document.getElementById('valGravX').innerText = data.val.gravity.x;
+            var gravX = data.val.gravity.x;
+          }
+          if (data.val.gravity.y) {
+            document.getElementById('valGravY').innerText = data.val.gravity.y;
+            var gravY = data.val.gravity.y;
+          }
+          if (data.val.gravity.z) {
+            document.getElementById('valGravZ').innerText = data.val.gravity.z;
+            var gravZ = data.val.gravity.z;
+          }
+
+          if (data.val.accel.x) {
+            document.getElementById('valAccelX').innerText = data.val.accel.x;
+            var accelX = data.val.accel.x;
+          }
+          if (data.val.accel.y) {
+            document.getElementById('valAccelY').innerText = data.val.accel.y;
+            var accelY = data.val.accel.y;
+          }
+          if (data.val.accel.z) {
+            document.getElementById('valAccelZ').innerText = data.val.accel.z;
+            var accelZ = data.val.accel.z;
+          }
+        }
+
+      });
+
+    </script>
+
+
+  </body>
+</html>

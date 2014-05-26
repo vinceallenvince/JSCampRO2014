@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv='content-type' content='text/html; charset=UTF-8' />
+  <meta name='viewport' content='user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0' />
+  <meta name='apple-mobile-web-app-capable' content='yes' />
+  <title>SuperSimpleSim</title>
+  <link href='css/SuperSimpleSim.min.css' rel='stylesheet' type='text/css' charset='utf-8' />
+  <script src='scripts/SuperSimpleSim.min.js' type='text/javascript' charset='utf-8'></script>
+  </head>
+  <body>
+    <script type='text/javascript' charset='utf-8'>
+
+      var sssim = SuperSimpleSim;
+      var width = document.body.scrollWidth;
+      var height = document.body.scrollHeight;
+      var rand = sssim.System.getRandomNumber;
+      var minScale = 5;
+      var maxScale = 50;
+      var map = sssim.System.map;
+
+      sssim.System.setup(function() {
+        for (var i = 0; i < 180; i++) {
+          scale = rand(minScale, maxScale);
+          this.add('Item', {
+            width: scale,
+            height: scale,
+            mass: Math.pow(scale, 2),
+            color: [map(scale, minScale, maxScale, 0, 150), map(scale, minScale, maxScale, 0, 100), scale],
+            location: new sssim.Vector(rand(0, width), rand(0, height))
+          });
+        }
+        this.wind = new sssim.Vector(1, 0.2);
+      });
+
+      sssim.System.loop();
+
+    </script>
+  </body>
+</html>

@@ -1,0 +1,149 @@
+<html>
+  <title>FloraJS | BLE Sensor</title>
+  <head>
+    <link rel="stylesheet" href="css/burner.min.css" type="text/css" charset="utf-8" />
+    <link rel="stylesheet" href="css/flora.min.css" type="text/css" charset="utf-8" />
+    <script src="scripts/burner.js" type="text/javascript" charset="utf-8"></script>
+    <script src="scripts/flora.js" type="text/javascript" charset="utf-8"></script>
+  </head>
+  <body>
+    <script type='text/javascript' src='http://localhost:1337/socket.io/socket.io.js'></script>
+    <script type='text/javascript'>
+
+      var paletteA = new Flora.ColorPalette();
+      paletteA.addColor({
+        min: 12,
+        max: 24,
+        startColor: [207, 194, 155],
+        endColor: [157, 136, 71]
+      });
+
+      var paletteB = new Flora.ColorPalette();
+      paletteB.addColor({
+        min: 12,
+        max: 24,
+        startColor: [255, 255, 255],
+        endColor: [200, 200, 200]
+      });
+
+      var rand = Flora.Utils.getRandomNumber;
+      var map = Flora.Utils.map;
+
+      // start the system; pass initial instructions
+      Burner.System.init();
+
+      var world = Burner.System.firstWorld();
+      world.gravity.x = 0;
+      world.gravity.y = 0;
+      world.c = .25;
+
+      var center = new Burner.Vector(world.width / 2, world.height / 2);
+      var minRadius = 100;
+      var maxRadius = 300;
+      var minScale = 10;
+      var maxScale = 20;
+      var superScale = 200;
+      var minMass = 100;
+      var maxMass = 200;
+      var superMass = 100
+      var maxAgents = 120;
+      var minBorder = 1;
+      var maxBorder = 4;
+      var superBorder = 4;
+
+      var attractor = Burner.System.add('Attractor', {
+        location: new Burner.Vector(center.x, center.y),
+        width: 100,
+        height: 100,
+        G: 0,
+        borderRadius: 100,
+        borderColor: [45, 42, 77],
+        borderWidth: 30,
+        borderStyle: 'groove',
+        boxShadowColor: [0, 0, 0],
+        boxShadowSpread: 30,
+        color: [45, 40, 100],
+        opacity: 1,
+        zIndex: 2,
+        angle: 0,
+        colorMode: 'hsl',
+        beforeStep: function() {
+          this.opacity = Flora.Utils.constrain(Flora.Utils.map(this.angle, 0, 90, 0.85, 1), 0.85, 1);
+          this.boxShadowBlur = Flora.Utils.constrain(Flora.Utils.map(this.angle, 0, 90, 0, 50), 0, 50);
+          this.boxShadowSpread = Flora.Utils.constrain(Flora.Utils.map(this.angle, 0, 90, 30, 50), 30, 50);
+          this.borderColor[2] = Flora.Utils.map(this.angle, -90, 90, 60, 77);
+          this.boxShadowColor[2] = Flora.Utils.map(this.angle, -90, 90, 0, 100);
+        }
+      });
+
+      for (var i = 0; i < 3; i++) {
+        var point = Burner.System.add('Agent', {
+          location: new Burner.Vector(1, 1),
+          offsetDistance: 0,
+          width: 400,
+          height: 1,
+          borderRadius: 0,
+          borderWidth: 0,
+          borderStyle: 'none',
+          color: [190, 190, 170],
+          opacity: 1,
+          parent: attractor,
+          zIndex: 1,
+          isStatic: false,
+          index: i,
+          beforeStep: function() {
+            this.angle = this.parent.angle + (this.index * 30);
+            this.width = Flora.Utils.map(this.parent.angle, -90, 90, this.parent.width * 6, this.parent.width);
+          }
+        });
+      }
+
+      for (var i = 0; i < maxAgents; i++) {
+
+        var loc = new Burner.Vector(1, 1);
+        loc.normalize();
+        loc.rotate(rand(0, 360, true));
+        loc.mult(rand(minRadius, maxRadius));
+        loc.add(center);
+        var scale = rand(minScale, maxScale);
+        Burner.System.add('Agent', {
+          location: loc,
+          mass: map(scale, minScale, maxScale, minMass, maxMass),
+          width: scale,
+          height: scale,
+          borderRadius: i % 2 ? 100 : 0,
+          borderColor: paletteB.getColor(),
+          borderWidth: map(scale, minScale, maxScale, minBorder, maxBorder),
+          borderStyle: 'solid',
+          color: paletteA.getColor(),
+          opacity: map(scale, minScale, maxScale, .9, .1)
+        });
+      }
+
+      //
+
+      var yaw, yawOffset = 0;
+
+      var socket = io.connect('http://localhost:1337');
+
+      socket.on('connected', function() {
+        console.log('connected!');
+      });
+
+      socket.on('dataReceived', function(data) {
+
+        if (data.calibrate) {
+          yawOffset = yaw;
+        }
+
+        if (data.val) {
+          if (data.val.attitude.yaw) {
+            yaw = Flora.Utils.radiansToDegrees(data.val.attitude.yaw);
+            attractor.angle = -(yaw - yawOffset);
+            attractor.G = Flora.Utils.map(attractor.angle, -90, 90, -200, 200)
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv='content-type' content='text/html; charset=UTF-8' />
+  <meta name='viewport' content='user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0' />
+  <meta name='apple-mobile-web-app-capable' content='yes' />
+  <title>SuperSimpleSim</title>
+  <link href='css/SuperSimpleSim.min.css' rel='stylesheet' type='text/css' charset='utf-8' />
+  <script src='scripts/SuperSimpleSim.js' type='text/javascript' charset='utf-8'></script>
+  </head>
+  <body>
+    <script type='text/javascript' charset='utf-8'>
+
+      var sssim = SuperSimpleSim;
+      var width = document.body.scrollWidth;
+      var height = document.body.scrollHeight;
+      var center = new sssim.Vector(width / 2, height / 2);
+      var minScale = 5;
+      var maxScale = 100;
+      var rand = sssim.System.getRandomNumber;
+      var map = sssim.System.map;
+
+      sssim.System.setup(function() {
+        for (var i = 0; i < 180; i++) {
+          scale = rand(minScale, maxScale);
+          var loc = new sssim.Vector(1, 1);
+          loc.normalize()
+          loc.rotate(rand(0, 360));
+          loc.mult((maxScale - scale) * 6);
+          loc.add(center);
+          this.add('Item', {
+            width: scale,
+            height: scale,
+            mass: scale,
+            color: [map(scale, minScale, maxScale, 0, 255), map(scale, minScale, maxScale, 0, 125), scale],
+            location: loc
+          });
+        }
+      });
+
+      sssim.System.loop();
+
+    </script>
+  </body>
+</html>
