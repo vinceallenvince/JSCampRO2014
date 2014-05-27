@@ -18,72 +18,99 @@
   <body>
     <script type="text/javascript" charset="utf-8">
 
-      var rand = Flora.Utils.getRandomNumber;
+      var centerAgent, mouseAgent, accelVector = new Burner.Vector();
 
       var world = new Burner.World(document.body, {
-        gravity: new Burner.Vector(),
-        c: 0
+        gravity: new Burner.Vector(0, 0),
+        c: 0,
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        borderColor: [100, 100, 100],
+        width: Flora.Utils.getWindowSize().width / 0.75,
+        height: Flora.Utils.getWindowSize().height / 0.75,
+        boundToWindow: false
       });
+
+      var center = new Burner.Vector(world.width / 2, world.height / 2);
+      var rand = Flora.Utils.getRandomNumber;
+      var map = Flora.Utils.map;
 
       Burner.System.init(function() {
 
+        centerAgent = this.add('Agent', {
+          location: new Burner.Vector(world.width / 2, world.height / 2),
+          isStatic: true,
+          borderRadius: 100,
+          color: [255, 255, 255]
+        });
+
+        mouseAgent = this.add('Agent', {
+          width: 5,
+          height: 5,
+          borderRadius: 100,
+          color: [255, 255, 255],
+          beforeStep: function() {
+            this.location.x = Burner.System.mouse.location.x;
+            this.location.y = Burner.System.mouse.location.y;
+            accelVector = Burner.Vector.VectorSub(this.location, centerAgent.location);
+          }
+        });
+
+        this.add('Connector', {
+          parentA: centerAgent,
+          parentB: mouseAgent,
+          borderColor: [100, 100, 100]
+        });
+
         var agent = this.add('Agent', {
+          controlCamera: true,
           angle: 90,
           motorSpeed: 2,
           minSpeed: 1,
-          maxSpeed: 10,
+          maxSpeed: 6,
           width: 20,
           height: 20,
-          location: new Burner.Vector(world.width * 0.4, 0),
-          sensitivity: new Burner.Vector(),
+          location: new Burner.Vector(center.x, center.y),
+          wrapWorldEdges: true,
           sensors: [
             this.add('Sensor', {
               type: 'light',
               displayRange: true,
               displayConnector: true,
-              behavior: 'LIKES',
-              sensitivity: 300
+              behavior: 'AGGRESSIVE',
+              sensitivity: 200
             }),
             this.add('Sensor', {
               type: 'light',
               displayRange: false,
               displayConnector: false,
               behavior: 'DESTROY',
-              onDestroy: function(sensor, stimulus) {
-
+              onDestroy: function() {
+                Burner.System.add('Stimulus', {
+                  type: 'light',
+                  location: new Burner.Vector(rand(0, world.width), rand(0, world.height)),
+                  scale: 0,
+                  beforeStep: function() {
+                    if (this.scale < 1) {
+                      this.scale += 0.025;
+                    }
+                  }
+                });
               }
             })
           ],
           beforeStep: function() {
-            // mouse horizontal location determines sensitivity
-            var sensor = this.sensors[0];
-            sensor.sensitivity = Flora.Utils.map(Burner.System.mouse.location.x, 0,
-                this.world.width, 0, 600);
-            sensor.rangeDisplay.width = sensor.sensitivity;
-            sensor.rangeDisplay.height = sensor.sensitivity;
+            this.applyForce(accelVector.mult(0.1));
           }
         }, world);
 
-        for (var i = 0; i < 6; i++) {
+        for (var i = 0; i < 20; i++) {
           this.add('Stimulus', {
             type: 'light',
             draggable: true,
             location: new Burner.Vector(rand(0, agent.world.width), rand(0, agent.world.height))
           });
         }
-
-        this.add('Caption', {
-          text: 'Flora.Sensor.Mouse',
-          opacity: 0.4,
-          borderColor: 'transparent',
-          position: 'top center'
-        });
-
-        this.add('InputMenu', {
-          opacity: 0.4,
-          borderColor: 'transparent',
-          position: 'bottom center'
-        });
       }, world);
     </script>
   </body>

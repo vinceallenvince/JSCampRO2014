@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <meta name="keywords" content="JavaScript, Framework, Animation, Natural, System" />
+    <meta name="description" content="FloraJS simulates natural systems using JavaScript." />
+    <meta name="viewport" content = "user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <meta name='apple-mobile-web-app-capable' content='yes' />
+    <meta property='og:title' content='FloraJS' />
+    <meta property='og:url' content='http://www.florajs.com' />
+    <meta property='og:site_name' content='FloraJS' />
+    <title>FloraJS | Simulate natural systems with JavaScript</title>
+    <link rel="stylesheet" href="css/Burner.min.css" type="text/css" charset="utf-8" />
+    <link rel="stylesheet" href="css/Flora.min.css" type="text/css" charset="utf-8" />
+
+    <style type="text/css">
+      #vector-mag-container, #vector-loc-container {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100px;
+        height: 40px;
+      }
+      #vector-loc-container {
+        width: 160px;
+      }
+      #vector-background {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: white;
+        opacity: 0.2;
+
+      }
+      #vector-mag, #vector-loc {
+        position: absolute;
+        top: 12px; left: 0;
+        width: 100px;
+        text-align: center;
+        font-family: Helvetica;
+        font-size: 1em;
+        color: white;
+      }
+      #vector-loc {
+        width: 160px;
+      }
+      .dark {
+        color: #aaa;
+      }
+    </style>
+
+    <script src="scripts/Burner.js" type="text/javascript" charset="utf-8"></script>
+    <script src="scripts/Flora.min.js" type="text/javascript" charset="utf-8"></script>
+  </head>
+  <body>
+    <div id='vector-mag-container'>
+      <div id='vector-background'></div>
+      <div id='vector-mag'>hi</div>
+    </div>
+
+    <div id='vector-loc-container'>
+      <div id='vector-background'></div>
+      <div id='vector-loc'>loc</div>
+    </div>
+    <script type="text/javascript" charset="utf-8">
+
+      var vectorMagDisplay = document.getElementById('vector-mag-container'),
+          vectorMag = document.getElementById('vector-mag'),
+          vectorLocDisplay = document.getElementById('vector-loc-container'),
+          vectorLoc = document.getElementById('vector-loc');
+
+      var mouseAgent, accelVector = new Burner.Vector();
+
+      var world = new Burner.World(document.body, {
+        gravity: new Burner.Vector(0, 0),
+        c: 0
+      });
+
+      var center = new Burner.Vector(world.width / 2, world.height / 2);
+      var rand = Flora.Utils.getRandomNumber;
+      var map = Flora.Utils.map;
+
+      Burner.System.init(function() {
+
+        centerAgent = this.add('Agent', {
+          location: new Burner.Vector(world.width / 2, world.height / 2),
+          isStatic: true,
+          borderRadius: 100,
+          color: [255, 255, 255]
+        });
+
+        mouseAgent = this.add('Agent', {
+          width: 5,
+          height: 5,
+          borderRadius: 100,
+          color: [255, 255, 255],
+          beforeStep: function() {
+            this.location.x = Burner.System.mouse.location.x;
+            this.location.y = Burner.System.mouse.location.y;
+            accelVector = Burner.Vector.VectorSub(this.location, centerAgent.location);
+
+            vectorMagDisplay.style.left = this.location.x + 'px';
+            vectorMagDisplay.style.top = this.location.y + 'px';
+            vectorMag.innerHTML = '<span class="dark">mag:</span> ' + parseInt(accelVector.mag());
+
+            vectorLocDisplay.style.left = (this.location.x - 160) + 'px';
+            vectorLocDisplay.style.top = (this.location.y - 40) + 'px';
+            vectorLoc.innerHTML = '<span class="dark">x:</span> ' + parseInt(accelVector.x) + 'px &nbsp; <span class="dark">y:</span> ' + parseInt(accelVector.y) + 'px';
+
+          }
+        });
+
+        this.add('Connector', {
+          parentA: centerAgent,
+          parentB: mouseAgent,
+          borderColor: [100, 100, 100]
+        });
+
+      }, world);
+
+    </script>
+  </body>
+</html>
