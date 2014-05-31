@@ -1,8 +1,8 @@
-/*! SuperSimpleSim v1.0.1 - 2014-05-24 12:05:10 
- *  Vince Allen 
- *  Brooklyn, NY 
- *  vince@vinceallen.com 
- *  @vinceallenvince 
+/*! SuperSimpleSim v1.0.1 - 2014-05-24 12:05:10
+ *  Vince Allen
+ *  Brooklyn, NY
+ *  vince@vinceallen.com
+ *  @vinceallenvince
  *  License: MIT */
 
 var SuperSimpleSim = {}, exports = SuperSimpleSim;

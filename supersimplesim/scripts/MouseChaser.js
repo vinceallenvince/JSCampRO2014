@@ -83,6 +83,9 @@ MouseChaser.prototype.step = function() {
 
   this.velocity.add(this.acceleration);
   this.velocity.limit(this.maxSpeed, this.minSpeed);
+  if (this.velocity.mag() > 0.1) {
+        this.angle = MouseChaser.radiansToDegrees(Math.atan2(this.velocity.y, this.velocity.x));
+      }
   this.location.add(this.velocity);
   if (this.checkWorldEdges) {
     this._checkWorldEdges();
@@ -126,3 +129,22 @@ MouseChaser.prototype._seek = function(target) {
 MouseChaser._addEvent(document, 'mousemove', function(e) {
   MouseChaser._recordMouseLoc.call(MouseChaser, e);
 });
+
+/**
+ * Converts radians to degrees.
+ *
+ * @function radiansToDegrees
+ * @memberof Utils
+ * @param {number} radians The radians value to be converted.
+ * @returns {number} A number in degrees.
+ */
+MouseChaser.radiansToDegrees = function(radians) {
+  if (typeof radians !== 'undefined') {
+    return radians * (180/Math.PI);
+  } else {
+    if (typeof console !== 'undefined') {
+      console.log('Error: Utils.radiansToDegrees is missing radians param.');
+    }
+    return false;
+  }
+};
