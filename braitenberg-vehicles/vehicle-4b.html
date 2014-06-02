@@ -177,29 +177,42 @@
 					agent.el.appendChild(createMotor(agent.id, !i ? [100, 100, 100] : [255, 255, 255]));
 				}
 
+				var scale;
+
 				// Stimulus
-      	for (var i = 0; i < 5; i++) {
+      	for (var i = 0; i < 2; i++) {
+      		scale = rand(50, 200);
 	      	this.add('Stimulus', {
 	          type: 'heat',
-	          location: new Burner.Vector(rand(0, world.width), rand(0, world.height))
+	          location: new Burner.Vector(rand(0, world.width), rand(0, world.height)),
+	          width: scale,
+	          height: scale
 	        });
+	        scale = rand(50, 200);
 	        this.add('Stimulus', {
 	          type: 'cold',
-	          location: new Burner.Vector(rand(0, world.width), rand(0, world.height))
+	          location: new Burner.Vector(rand(0, world.width), rand(0, world.height)),
+	          width: scale,
+	          height: scale
 	        });
-	        this.add('Stimulus', {
+      	}
+
+      	for (var i = 0; i < 7; i++) {
+      		this.add('Stimulus', {
 	          type: 'light',
 	          location: new Burner.Vector(rand(0, world.width), rand(0, world.height))
 	        });
+
 	        this.add('Stimulus', {
 	          type: 'food',
 	          location: new Burner.Vector(rand(0, world.width), rand(0, world.height))
 	        });
-	        this.add('Stimulus', {
-	          type: 'oxygen',
-	          location: new Burner.Vector(rand(0, world.width), rand(0, world.height))
-	        });
       	}
+
+        this.add('Stimulus', {
+          type: 'oxygen',
+          location: new Burner.Vector(rand(0, world.width), rand(0, world.height))
+        });
 
       	// Audio agent
       	this.add('Agent', {
