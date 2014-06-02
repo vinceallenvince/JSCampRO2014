@@ -1,6 +1,6 @@
 #JSCamp Romania 2014
 
-Code and demos from my talk 'Braitenberg and the Browser' at JSCamp Romania 2014.
+Code and demos from my talk 'Braitenberg and the Browser' at [JSCamp Romania 2014](http://www.jscamp.ro).
 
 View the demos - [http://vinceallenvince.github.io/JSCampRO2014/](http://vinceallenvince.github.io/JSCampRO2014/)
 
